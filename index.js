@@ -78,9 +78,10 @@ class Client {
         const now = new Date();
         if (!renew && this.#accessToken && this.#accessToken.expires.getTime() > now.getTime()) return;
         const jwt = await this.getJWT();
+        now.setTime(now.getTime() + jwt.data.expires - (1000 * 60 * 60)); // Renew an hour early
         this.#accessToken = {
             token: jwt.data.access_token,
-            expires: now.setTime(now.getTime() + jwt.data.expires - (1000 * 60 * 60)), // Renew an hour early
+            expires: now,
         };
     }
 
