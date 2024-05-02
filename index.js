@@ -13,6 +13,7 @@ class Client {
     #apiEndpoint;
     #imsHost;
     #jwtEndpoint;
+    #oauthEndpoint;
     #scopes;
 
     constructor({
@@ -25,6 +26,7 @@ class Client {
         apiEndpoint = '/v2/usermanagement',
         imsHost = 'ims-na1.adobelogin.com',
         jwtEndpoint = '/ims/exchange/jwt',
+        oauthEndpoint = '/ims/token/v2',
         scopes = ['ent_user_sdk'],
     }) {
         this.#clientID = clientID;
@@ -36,6 +38,7 @@ class Client {
         this.#apiEndpoint = apiEndpoint;
         this.#imsHost = imsHost;
         this.#jwtEndpoint = jwtEndpoint;
+        this.#oauthEndpoint = oauthEndpoint;
         this.#scopes = scopes;
     }
 
@@ -70,6 +73,24 @@ class Client {
 
     }
 
+    getAccessToken() {
+        const options = {
+            method: 'post',
+            url: `https://${this.#imsHost}${this.#oauthEndpoint}`,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Cache-Control': 'no-cache',
+            },
+            data: new URLSearchParams({
+                grant_type: 'client_credentials',
+                client_id: this.#clientID,
+                client_secret: this.#clientSecret,
+                scope: this.scopes,
+            }),
+        };
+        return axios(options);
+    }
+
     reset() {
         this.#accessToken = null;
     }
@@ -85,8 +106,22 @@ class Client {
         };
     }
 
-    async call(path, data) {
-        await this.authorize();
+    async oAuthorize(renew = false) {
+        const now = new Date();
+        if (!renew && this.#accessToken && this.#accessToken.expires.getTime() > now.getTime()) return;
+        const auth = await this.getAccessToken();
+        this.#accessToken = {
+            token: auth.data.access_token,
+            expires: Date.now() + (auth.data.expires_in * 1000),
+        };
+    }
+
+    async call(path, data, oauth = false) {
+        if (oauth) {
+            await this.oAuthorize();
+        } else {
+            await this.authorize();
+        }
         const options = {
             method: data === undefined ? 'get' : 'post',
             url: `https://${this.#apiHost}${this.#apiEndpoint}${path}`,
