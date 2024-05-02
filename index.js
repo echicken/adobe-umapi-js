@@ -137,8 +137,8 @@ class Client {
         return axios(options);
     }
 
-    async getUserInformation(userID) {
-        const res = await this.call(`/organizations/${this.#orgID}/users/${userID}`);
+    async getUserInformation(userID, oauth = false) {
+        const res = await this.call(`/organizations/${this.#orgID}/users/${userID}`, undefined, oauth);
         if (res.data === undefined) throw new Error('Invalid API response');
         if (res.data.result !== 'success') return { err: new Error(`${res.data.result}: ${res.data.message}`) };
         return res.data.user;
