@@ -85,7 +85,7 @@ class Client {
                 grant_type: 'client_credentials',
                 client_id: this.#clientID,
                 client_secret: this.#clientSecret,
-                scope: this.scopes,
+                scope: this.#scopes,
             }),
         };
         return axios(options);
@@ -107,6 +107,7 @@ class Client {
     }
 
     async oAuthorize(renew = false) {
+        this.#scopes = ['openid', 'AdobeID', 'user_management_sdk'];
         const now = new Date();
         if (!renew && this.#accessToken && this.#accessToken.expires.getTime() > now.getTime()) return;
         const auth = await this.getAccessToken();
