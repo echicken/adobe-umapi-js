@@ -113,7 +113,7 @@ class Client {
         const auth = await this.getAccessToken();
         this.#accessToken = {
             token: auth.data.access_token,
-            expires: Date.now() + (auth.data.expires_in * 1000),
+            expires: new Date(Date.now() + (auth.data.expires_in * 1000)),
         };
     }
 
