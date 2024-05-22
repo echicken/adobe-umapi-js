@@ -144,25 +144,30 @@ class Client {
         return res.data.user;
     }
 
-    async addUser(userID, email, country, firstname, lastname, oauth) {
-        const res = await this.call(`/organizations/${this.#orgID}/users/`, {
-            createFederatedId: {
-                username: userID,
-                email,
-                country,
-                firstname,
-                lastname,
-                option: 'ignoreIfAlreadyExists',
-            },
-        }, oauth);
+    async addUser(userID, domain, email, country, firstname, lastname, oauth) {
+        const res = await this.call(`/action/${this.#orgID}`, [{
+			user: userID,
+			domain,
+			requestID: `create_${userID}`,
+			do: [{
+				createFederatedID: {
+					email,
+					country,
+					firstname,
+					lastname,
+					option: 'updateIfAlreadyExists',
+				}
+			}],
+        }], oauth);
         if (res.data === undefined) throw new Error('Invalid API response');
         if (res.data.result !== 'success') return { err: new Error(`${res.data.result}: ${res.data.message}`) };
         return res.data;
     }
 
-    async addUserToGroup(userID, group, oauth) {
-        const res = await this.call(`/organizations/${this.#orgID}/users/${userID}`, [{
+    async addUserToGroup(userID, domain, group, oauth) {
+        const res = await this.call(`/action/${this.#orgID}`, [{
             user: userID,
+			domain,
             requestID: `add_${userID}_to_${group}`,
             do: [{
                 add: {
@@ -176,6 +181,24 @@ class Client {
         if (res.data.result !== 'success') return { err: new Error(`${res.data.result}: ${res.data.message}`) };
         return res.data;
     }
+
+	async removeUserFromGroup(userID, domain, group, oauth) {
+		const res = await this.call(`/action/${this.#orgID}`, [{
+			user: userID,
+			domain,
+			requestID: `remove_${userID}_from_${group}`,
+			do: [{
+				remove: {
+					group: [
+						group
+					]
+				}
+			}]
+		}], oauth);
+		if (res.data === undefined) throw new Error(`Invalid API response`);
+		if (res.data.result !== 'success') return { err: new Error(`${res.data.result}: ${res.data.message}`) };
+		return res.data;
+	}
 
 }
 
