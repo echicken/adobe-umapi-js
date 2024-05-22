@@ -144,6 +144,39 @@ class Client {
         return res.data.user;
     }
 
+    async addUser(userID, email, country, firstname, lastname, oauth) {
+        const res = await this.call(`/organizations/${this.#orgID}/users/`, {
+            createFederatedId: {
+                username: userID,
+                email,
+                country,
+                firstname,
+                lastname,
+                option: 'ignoreIfAlreadyExists',
+            },
+        }, oauth);
+        if (res.data === undefined) throw new Error('Invalid API response');
+        if (res.data.result !== 'success') return { err: new Error(`${res.data.result}: ${res.data.message}`) };
+        return res.data;
+    }
+
+    async addUserToGroup(userID, group, oauth) {
+        const res = await this.call(`/organizations/${this.#orgID}/users/${userID}`, [{
+            user: userID,
+            requestID: `add_${userID}_to_${group}`,
+            do: [{
+                add: {
+                    group: [
+                        group
+                    ],
+                },
+            }],
+        }], oauth);
+        if (res.data === undefined) throw new Error('Invalid API response');
+        if (res.data.result !== 'success') return { err: new Error(`${res.data.result}: ${res.data.message}`) };
+        return res.data;
+    }
+
 }
 
 module.exports = {
